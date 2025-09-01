@@ -1,45 +1,79 @@
-import { Router } from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import User from '../models/user.model.js';
+// src/routes/task.routes.js
+import { Router } from "express";
+import Task from "../models/task.js"; // ✅ Updated to match your file name
+import jwt from "jsonwebtoken";
 
 const router = Router();
 
-// Register
-router.post('/register', async (req, res, next) => {
+// Middleware to authenticate user
+const auth = (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'All fields are required' });
-    }
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ message: "No token provided" });
 
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ message: 'Email already exists' });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.id;
+    next();
+  } catch (err) {
+    res.status(401).json({ message: "Invalid token" });
+  }
+};
 
-    const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashed });
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
-    res.status(201).json({ user: { name: user.name, email: user.email, _id: user._id }, token });
+// Get all tasks for the logged-in user
+router.get("/", auth, async (req, res, next) => {
+  try {
+    const tasks = await Task.find({ owner: req.userId });
+    res.json(tasks);
   } catch (err) {
     next(err);
   }
 });
 
-// Login
-router.post('/login', async (req, res, next) => {
+// Add a new task
+router.post("/", auth, async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ message: 'Email and password required' });
+    const { title, description } = req.body;
+    if (!title) return res.status(400).json({ message: "Title is required" });
 
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+    const newTask = await Task.create({ 
+      title, 
+      description, 
+      owner: req.userId 
+    });
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(400).json({ message: 'Invalid credentials' });
+    res.status(201).json(newTask);
+  } catch (err) {
+    next(err);
+  }
+});
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
-    res.status(200).json({ user: { name: user.name, email: user.email, _id: user._id }, token });
+// Update a task
+router.put("/:id", auth, async (req, res, next) => {
+  try {
+    const { title, description, status } = req.body;
+    const task = await Task.findOneAndUpdate(
+      { _id: req.params.id, owner: req.userId },
+      { title, description, status },
+      { new: true }
+    );
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    res.json(task);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Delete a task
+router.delete("/:id", auth, async (req, res, next) => {
+  try {
+    const task = await Task.findOneAndDelete({ 
+      _id: req.params.id, 
+      owner: req.userId 
+    });
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    res.json({ message: "Task deleted" });
   } catch (err) {
     next(err);
   }
