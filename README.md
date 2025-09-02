@@ -1,32 +1,24 @@
-# Task Manager App
+# Task Manager Application
 
-A full-stack task manager application built for Vexocore IT Services assignment.  
-Users can sign up/login, create, edit, delete, and mark tasks as completed.
+A web-based task management tool that allows users to create, update, and delete tasks with authentication support.  
+It helps users organize their daily work efficiently.
 
 ## Features
-- User authentication (JWT/Firebase)
+- User authentication (JWT)
 - Create, update, delete tasks
-- Toggle task status (Pending/Completed)
-- Backend deployed on [Vercel]
 - Responsive UI
+- Full-stack application (Frontend + Backend)
 
 ## Tech Stack
-- Frontend: React/Vite
-- Backend: Node.js, Express
-- Database: MongoDB/MySQL
-- Deployment: Render/Vercel
+- React.js
+- Node.js
+- Express
+- MongoDB
+- JWT Authentication
+- CSS
 
-## Installation
-```bash
-# Clone the repository
+## Demo Video
+[Watch Demo on YouTube](https://youtu.be/vVrl-AAm8P4)
 
-
-# Backend setup
-cd backend
-npm install
-npm start
-
-# Frontend setup
-cd frontend
-npm install
-npm run dev
+## GitHub
+[Task Manager Repository](https://github.com/dimplepatel-18/task-manager.git)
